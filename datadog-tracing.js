@@ -29,23 +29,23 @@ function datadogTracingPlugin(opts = {}) {
 					Assert.func(reply, 'reply')
 
 
-					let wrapReply
+					// TODO: Remove this assertion once it is confirmed that this case may never happen.
+					//
+					Assert(!('__is_wrapped$' in reply), "did not expect to receive a reply that's already wrapped")
 
-					if (reply.__is_wrapped$) {
-						wrapReply = _endSpan => reply
-					} else {
-						wrapReply = endSpan => {
-							function datadogTracedReply(...args) {
-								const err = args.length > 0 ? args[0] : null
-								endSpan(err)
+					const wrapReply = endSpan => {
+						const datadogTracedReply = function (...args) {
+							const err = args.length > 0 ? args[0] : null
+							endSpan(err)
 
-								return reply.apply(this, args)
-							}
-
-							datadogTracedReply.__is_wrapped$ = true
-
-							return datadogTracedReply
+							return reply.apply(this, args)
 						}
+
+						// TODO: Remove this assertion once it is confirmed that this case may never happen.
+						//
+						datadogTracedReply.__is_wrapped$ = true
+
+						return datadogTracedReply
 					}
 
 
