@@ -29,21 +29,23 @@ function datadogTracingPlugin(opts = {}) {
 					Assert.func(reply, 'reply')
 
 
-					let wrapped_reply
+					let wrapReply
 
 					if (reply.__is_wrapped$) {
-						wrapped_reply = _endSpan => reply
+						wrapReply = _endSpan => reply
 					} else {
-						wrapped_reply = endSpan => {
-							return function datadogTracedReply (...args) {
+						wrapReply = endSpan => {
+							function datadogTracedReply(...args) {
 								const err = args.length > 0 ? args[0] : null
 								endSpan(err)
 
 								return reply.apply(this, args)
 							}
-						}
 
-						wrapped_reply.__is_wrapped$ = true
+							datadogTracedReply.__is_wrapped$ = true
+
+							return datadogTracedReply
+						}
 					}
 
 
@@ -52,7 +54,7 @@ function datadogTracingPlugin(opts = {}) {
 						//
 						span.addTags({ pattern: msgcanon })
 
-						args[1] = wrapped_reply(endSpan)
+						args[1] = wrapReply(endSpan)
 
 						return func.apply(seneca, args)
 					})
